@@ -299,7 +299,7 @@ make_shared:       [ Control Block | Object ]  ← single allocation, freed toge
 new + shared_ptr:  [ Control Block ] → [ Object ]  ← two allocations, freed independently
 ```
 
-> **Note**: With `make_shared`, even after all `shared_ptr`s are gone and the object is logically destroyed, the *memory* cannot be reclaimed until every `weak_ptr` is also destroyed. This is a classic senior-level / FAANG follow-up question.
+> **Note**: With `make_shared`, even after all `shared_ptr`s are gone and the object is logically destroyed, the *memory* cannot be reclaimed until every `weak_ptr` is also destroyed. so this is tricky sometime, it could be regarded as another form of memory leak.
 
 ---
 
