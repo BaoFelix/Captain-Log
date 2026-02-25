@@ -100,33 +100,7 @@ Steps:
 
 ---
 
-### 2.3.2 ASCII Memory Layout Diagram
-
-```
-┌─────────────────────────┐ High Address (0xFFFF...)
-│         Stack            │ ← grows downward ↓
-│  (local vars, frames)    │
-├─────────────────────────┤
-│           ↓              │
-│                          │
-│      (free space)        │
-│                          │
-│           ↑              │
-├─────────────────────────┤
-│         Heap             │ ← grows upward ↑
-│  (dynamic allocation)    │
-├─────────────────────────┤
-│  BSS (uninitialized)     │
-├─────────────────────────┤
-│  Data (initialized)      │
-├─────────────────────────┤
-│  Text (code)             │
-└─────────────────────────┘ Low Address (0x0000...)
-```
-
----
-
-### 2.3.3 Code Example
+### 2.3.2 Code Example
 
 ```cpp
 #include <memory>
@@ -149,7 +123,7 @@ void example() {
 
 ---
 
-### 2.3.4 Tricky Focus: Stack Overflow
+### 2.3.3 Tricky Focus: Stack Overflow
 
 **What causes it**: Stack overflow occurs when the call stack exceeds its allocated size — most commonly due to deep or infinite recursion, or declaring very large local arrays.
 
