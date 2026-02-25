@@ -1,7 +1,6 @@
 # Using CUDA (GPU) to Compute
 
-> GitHub-ready Markdown version converted from your original CUDA basics PDF notes.  
-> **Note:** Diagrams/handwritten sketches from the original PDF are inserted **inline** below the corresponding sections (original extracted images, unchanged).
+> A practical introduction to CUDA parallel computing — covering programming model, execution model, memory hierarchy, and common performance pitfalls.
 
 ---
 
@@ -11,19 +10,15 @@
   - [1.1 Introduction](#11-introduction)
   - [1.2 Understand How to Write and Run a CUDA Program](#12-understand-how-to-write-and-run-a-cuda-program)
   - [1.3 CPU vs GPU Architecture](#13-cpu-vs-gpu-architecture)
-  - [1.4 Some Key Abstractions in CUDA](#14-some-key-abstractions-in-cuda)
 - [2. CUDA Models: Programming → Execution → Memory Model](#2-cuda-models-programming--execution--memory-model)
   - [2.1 Programming Model](#21-programming-model)
   - [2.2 Execution Model](#22-execution-model)
   - [2.3 Memory Model](#23-memory-model)
-- [3. CUDA Core Techniques (Round 2)](#3-cuda-core-techniques-round-2)
-  - [3.1 Thread Organization](#31-thread-organization)
-  - [3.2 Memory Usage](#32-memory-usage)
-  - [3.3 Synchronization and Data Race](#33-synchronization-and-data-race)
-  - [3.4 Code-induced Execution Performance Considerations](#34-code-induced-execution-performance-considerations)
-- [4. CUDA Advanced Usage & Restrictions (Round 3)](#4-cuda-advanced-usage--restrictions-round-3)
-- [5. Performance Testing & Debugging References](#5-performance-testing--debugging-references)
-- [6. Reference](#6-reference)
+- [3. Synchronization, Data Races & Performance Pitfalls](#3-synchronization-data-races--performance-pitfalls)
+  - [3.1 Synchronization Levels](#31-synchronization-levels)
+  - [3.2 Data Races and How to Address Them](#32-data-races-and-how-to-address-them)
+  - [3.3 Common Performance Pitfalls](#33-common-performance-pitfalls)
+- [4. Reference](#4-reference)
 
 ---
 
@@ -50,8 +45,6 @@ In CUDA, your program runs on two main hardware sides:
 - **Device**: GPU + device memory (VRAM), executing CUDA kernels in parallel on many threads
 
 The core ideas of writing a CUDA program are:
-
-**Original PDF sketch (Host ↔ Device overview)**
 
 ![Host and Device sketch](page01_img01.jpeg)
 
@@ -138,8 +131,6 @@ int main()
 
 ### 1.3 CPU vs GPU Architecture
 
-**Original PDF figures (CPU vs GPU architecture)**
-
 ![CPU vs GPU cache hierarchy comparison](page02_img01.png)
 
 ![GPU SM layout illustration](page02_img02.jpeg)
@@ -209,8 +200,6 @@ These three levels are the most fundamental units in CUDA, allowing developers t
 | Memory Model | Local Memory | Spill storage when registers are insufficient; physically in global memory but used like per-thread local storage. |
 | Memory Model | Constant Memory | Read-only memory optimized for broadcast; useful for storing constants. |
 
-> **Figure note (original PDF):** Page 3 includes a table image showing the same abstractions and definitions, plus a formatted layout of this section.
-
 ---
 
 ### 2.2 Execution Model
@@ -228,13 +217,6 @@ At the hardware level, NVIDIA GPUs group threads into **warps** (typically 32 th
 - You usually do not directly manage warps in code, but understanding warps helps with performance optimization (especially to avoid warp divergence).
 
 > A warp is basically 32 threads that must execute together.
-
-> **Figure note (original PDF):** Page 4 includes:
-> - Grid/Block/Thread hierarchy diagrams
-> - A software-to-hardware mapping diagram (Thread → Warp → SM → GPU)
-> - Hand-drawn SIMT and warp sketches
-
-**Original PDF figures (SIMT / hierarchy / mapping)**
 
 ![Grid-Block-Thread hierarchy diagram](page04_img01.jpeg)
 
@@ -258,8 +240,6 @@ Key points:
 - **Branch Divergence**: If some threads in a warp take the `if` branch and others take the `else` branch, the warp executes both paths in sequence, reducing efficiency.
 
 So, it is better when threads in the same warp follow the same execution path whenever possible.
-
-**Original PDF figure (warp divergence example)**
 
 ![Warp divergence timing illustration](page05_img01.jpeg)
 
@@ -306,10 +286,6 @@ Based on access speed and visibility scope, main categories are:
    - Good for frequently read, rarely modified data (constants, textures)
    - Can improve performance for read-only access patterns
 
-> **Figure note (original PDF):** Page 5 shows a memory hierarchy diagram with Blocks, Threads, Registers, Local, Shared, Global, Constant, Texture, and Host (CPU).
-
-**Original PDF figure (CUDA memory hierarchy)**
-
 ![CUDA memory hierarchy diagram](page05_img02.jpeg)
 
 ---
@@ -323,8 +299,6 @@ CUDA encourages **adjacent threads accessing adjacent memory addresses** (coales
 If access is not coalesced, the GPU may need more memory transactions, which reduces throughput.
 
 In the `vectorAdd` example above:
-
-**Original PDF examples (global memory coalesced access)**
 
 ![Global memory access kernel example](page06_img01.jpeg)
 
@@ -343,15 +317,11 @@ To support parallel shared-memory access inside a block, the GPU divides shared 
 
 If multiple threads access different addresses that map to the same bank, the accesses may be serialized. This is called a **Bank Conflict**, and it lowers performance.
 
-**Original PDF figure (shared memory bank mapping)**
-
 ![Shared memory bank mapping table](page06_img03.jpeg)
 
 ---
 
-## 3. CUDA Core Techniques (Round 2)
-
-> **Original note:** “Will be introduced in Round 2”
+## 3. CUDA Core Techniques
 
 To implement high-quality and high-performance CUDA code, we need a solid foundation in:
 - thread organization
@@ -397,8 +367,6 @@ Checklist / key ideas:
 
 ### 3.2 Memory Usage
 
-**Original PDF example (constant memory)**
-
 ![Constant memory kernel example](page07_img01.jpeg)
 
 - Global Memory
@@ -415,8 +383,6 @@ Checklist / key ideas:
 In a parallel computing environment, threads run concurrently and often share resources. This can lead to race conditions if not handled carefully.
 
 Proper synchronization ensures operations on shared data occur in a predictable and correct order.
-
-**Original PDF example (shared memory + __syncthreads)**
 
 ![Shared memory synchronization kernel example](page07_img02.jpeg)
 
@@ -460,7 +426,7 @@ CUDA offers multiple synchronization levels:
 
 ---
 
-#### 3.3.3 Potential Data Races and How to Address Them
+### 3.2 Data Races and How to Address Them
 
 A data race occurs when:
 - multiple threads access the same memory location
@@ -495,62 +461,30 @@ How to address them:
 
 ---
 
-### 3.4 Code-induced Execution Performance Considerations
-
-#### Strategy for Writing Good CUDA Code
-
-1. Define the function calls  
-   - Decide how many times the function should run
-   - Decide whether to split work into smaller kernels
-
-2. Allocate memory  
-   - Allocate input/output memory on host (CPU) and device (GPU)
-
-3. Block and grid allocation  
-   - Choose a proper grid/block configuration for your data size and thread architecture
-
-4. Synchronize during result aggregation  
-   - Synchronize before reading/updating shared results to avoid races
-
-5. Copy results back to host  
-   - Copy final results to host after kernel execution
-
----
-
-#### Bad Practices That May Lead to Poor CUDA Performance
+### 3.3 Common Performance Pitfalls
 
 - **Warp Divergence**  
   When threads within the same warp (32 threads) take different branches — some go into the `if` path A while others go into the `else` path B — the hardware must execute path A first, then path B (or vice versa). This is called warp divergence, and it reduces parallel efficiency.
-
-**Original PDF code example**
 
 ![Branch divergence kernel example](page08_img01.jpeg)
 
 - **Uneven Thread Workload / Inconsistent Loop Iterations / Idle Threads**  
   When threads have different workloads or loop iteration counts, some threads finish early while others in the same warp are still running. This causes idle threads to stall and wait, reducing overall efficiency.
 
-**Original PDF code example**
-
 ![Load imbalance kernel example](page08_img02.jpeg)
 
 - **Non-Coalesced Global Memory Access**  
   When global memory accesses are not contiguous, the hardware cannot efficiently coalesce read/write transactions, leading to reduced memory bandwidth utilization.
-
-**Original PDF code example**
 
 ![Non-coalesced global memory access example](page08_img03.jpeg)
 
 - **Atomic Contention**  
   When multiple threads compete for atomic operations on the same address, the operations are serialized. The higher the contention, the longer the wait, and the worse the performance.
 
-**Original PDF code example**
-
 ![Atomic contention kernel example](page09_img01.jpeg)
 
 - **Shared Memory Bank Conflict**  
   Shared memory is divided into multiple banks. If multiple threads simultaneously access addresses that map to the same bank (and it is not a broadcast), the accesses are serialized, reducing throughput.
-
-**Original PDF code example**
 
 ![Shared memory bank conflict kernel example](page09_img02.jpeg)
 
@@ -559,19 +493,7 @@ How to address them:
 
 ---
 
-## 4. CUDA Advanced Usage & Restrictions (Round 3)
-
-> To be continued — topics planned: Dynamic Parallelism, CUDA Streams & Concurrency, Unified Memory, Multi-GPU Programming, kernel launch overhead considerations.
-
----
-
-## 5. Performance Testing & Debugging References
-
-> To be continued — topics planned: Nsight Compute profiling workflow, `cuda-memcheck` / `compute-sanitizer` usage, occupancy analysis, roofline model basics.
-
----
-
-## 6. Reference
+## 4. Reference
 
 - Nsight Compute — *Nsight Compute Documentation* (version reference in original note: 12.6)
 - NVIDIA Nsight Visual Studio Edition — *Nsight Visual Studio Edition Documentation* (version reference in original note: 12.6)
