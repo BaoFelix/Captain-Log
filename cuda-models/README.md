@@ -1,4 +1,3 @@
-
 # Using CUDA (GPU) to Compute
 
 > GitHub-ready Markdown version converted from your original CUDA basics PDF notes.  
@@ -54,7 +53,7 @@ The core ideas of writing a CUDA program are:
 
 **Original PDF sketch (Host ↔ Device overview)**
 
-![Host and Device sketch](./page01_img01.jpeg)
+![Host and Device sketch](page01_img01.jpeg)
 
 1. Host-side (CPU) code allocates memory and issues commands to the device (GPU).
 2. Prepare input data on the host and transfer it to device (GPU) memory.
@@ -141,9 +140,9 @@ int main()
 
 **Original PDF figures (CPU vs GPU architecture)**
 
-![CPU vs GPU cache hierarchy comparison](./cuda_basic_notes_assets/page02_img01.png)
+![CPU vs GPU cache hierarchy comparison](page02_img01.png)
 
-![GPU SM layout illustration](./cuda_basic_notes_assets/page02_img02.jpeg)
+![GPU SM layout illustration](page02_img02.jpeg)
 
 - **SM (Streaming Multiprocessor)**: Similar (conceptually) to a CPU core cluster for CUDA execution. It is responsible for managing and executing thread blocks.
 - A GPU typically has many SMs.
@@ -237,13 +236,13 @@ At the hardware level, NVIDIA GPUs group threads into **warps** (typically 32 th
 
 **Original PDF figures (SIMT / hierarchy / mapping)**
 
-![Grid-Block-Thread hierarchy diagram](./cuda_basic_notes_assets/page04_img01.jpeg)
+![Grid-Block-Thread hierarchy diagram](page04_img01.jpeg)
 
-![Software-to-hardware mapping diagram](./cuda_basic_notes_assets/page04_img02.jpeg)
+![Software-to-hardware mapping diagram](page04_img02.jpeg)
 
-![SIMT hand-drawn sketch](./cuda_basic_notes_assets/page04_img03.jpeg)
+![SIMT hand-drawn sketch](page04_img03.jpeg)
 
-![Warp hand-drawn sketch](./cuda_basic_notes_assets/page04_img04.jpeg)
+![Warp hand-drawn sketch](page04_img04.jpeg)
 
 ---
 
@@ -262,7 +261,7 @@ So, it is better when threads in the same warp follow the same execution path wh
 
 **Original PDF figure (warp divergence example)**
 
-![Warp divergence timing illustration](./cuda_basic_notes_assets/page05_img01.jpeg)
+![Warp divergence timing illustration](page05_img01.jpeg)
 
 ---
 
@@ -311,7 +310,7 @@ Based on access speed and visibility scope, main categories are:
 
 **Original PDF figure (CUDA memory hierarchy)**
 
-![CUDA memory hierarchy diagram](./cuda_basic_notes_assets/page05_img02.jpeg)
+![CUDA memory hierarchy diagram](page05_img02.jpeg)
 
 ---
 
@@ -327,9 +326,9 @@ In the `vectorAdd` example above:
 
 **Original PDF examples (global memory coalesced access)**
 
-![Global memory access kernel example](./cuda_basic_notes_assets/page06_img03.jpeg)
+![Global memory access kernel example](page06_img01.jpeg)
 
-![Coalesced vs non-coalesced access sketch](./cuda_basic_notes_assets/page06_img01.jpeg)
+![Coalesced vs non-coalesced access sketch](page06_img02.jpeg)
 - `idx` is consecutive
 - Threads in the same warp read/write consecutive memory
 - This allows memory requests to be coalesced into fewer transactions
@@ -346,7 +345,7 @@ If multiple threads access different addresses that map to the same bank, the ac
 
 **Original PDF figure (shared memory bank mapping)**
 
-![Shared memory bank mapping table](./cuda_basic_notes_assets/page06_img02.jpeg)
+![Shared memory bank mapping table](page06_img03.jpeg)
 
 ---
 
@@ -400,7 +399,7 @@ Checklist / key ideas:
 
 **Original PDF example (constant memory)**
 
-![Constant memory kernel example](./cuda_basic_notes_assets/page07_img02.jpeg)
+![Constant memory kernel example](page07_img01.jpeg)
 
 - Global Memory
 - Shared Memory
@@ -419,7 +418,7 @@ Proper synchronization ensures operations on shared data occur in a predictable 
 
 **Original PDF example (shared memory + __syncthreads)**
 
-![Shared memory synchronization kernel example](./cuda_basic_notes_assets/page07_img01.jpeg)
+![Shared memory synchronization kernel example](page07_img02.jpeg)
 
 ---
 
@@ -525,35 +524,35 @@ How to address them:
 
 **Original PDF code example**
 
-![Branch divergence kernel example](./cuda_basic_notes_assets/page08_img01.jpeg)
+![Branch divergence kernel example](page08_img01.jpeg)
 
 - **Uneven Thread Workload / Inconsistent Loop Iterations / Idle Threads**  
   When threads have different workloads or loop iteration counts, some threads finish early while others in the same warp are still running. This causes idle threads to stall and wait, reducing overall efficiency.
 
 **Original PDF code example**
 
-![Load imbalance kernel example](./cuda_basic_notes_assets/page08_img02.jpeg)
+![Load imbalance kernel example](page08_img02.jpeg)
 
 - **Non-Coalesced Global Memory Access**  
   When global memory accesses are not contiguous, the hardware cannot efficiently coalesce read/write transactions, leading to reduced memory bandwidth utilization.
 
 **Original PDF code example**
 
-![Non-coalesced global memory access example](./cuda_basic_notes_assets/page08_img03.jpeg)
+![Non-coalesced global memory access example](page08_img03.jpeg)
 
 - **Atomic Contention**  
   When multiple threads compete for atomic operations on the same address, the operations are serialized. The higher the contention, the longer the wait, and the worse the performance.
 
 **Original PDF code example**
 
-![Atomic contention kernel example](./cuda_basic_notes_assets/page09_img01.jpeg)
+![Atomic contention kernel example](page09_img01.jpeg)
 
 - **Shared Memory Bank Conflict**  
   Shared memory is divided into multiple banks. If multiple threads simultaneously access addresses that map to the same bank (and it is not a broadcast), the accesses are serialized, reducing throughput.
 
 **Original PDF code example**
 
-![Shared memory bank conflict kernel example](./cuda_basic_notes_assets/page09_img02.jpeg)
+![Shared memory bank conflict kernel example](page09_img02.jpeg)
 
 - **Independence Limitation Between Thread Blocks**  
   There is no direct synchronization mechanism between different thread blocks (unless using global memory with external coordination). This design ensures parallelism but also introduces programming constraints.
