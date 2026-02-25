@@ -91,12 +91,12 @@ Steps:
 
 | Dimension | Stack | Heap |
 |---|---|---|
-| 分配速度 (Allocation Speed) | Very fast (pointer bump) | Slower (allocator search) |
-| 释放方式 (Deallocation) | Automatic (scope exit) | Manual (`delete`) or smart pointer |
-| 大小限制 (Size Limit) | Small, fixed (typically 1–8 MB) | Limited only by available virtual memory |
-| 分配方式及对性能的影响/碎片化 (Allocation pattern & fragmentation) | Contiguous, no fragmentation | Non-contiguous possible, causes fragmentation over time |
-| 线程安全性 (Thread Safety) | Inherently thread-safe (each thread has own stack) | Requires synchronization for shared access |
-| 典型用途 (Typical Use Cases) | Local variables, function parameters, small fixed-size data | Dynamic-size data, objects with lifetime beyond scope, large allocations |
+| Allocation Speed | Very fast (pointer bump) | Slower (allocator search) |
+| Deallocation | Automatic (scope exit) | Manual (`delete`) or smart pointer |
+| Size Limit | Small, fixed (typically 1–8 MB) | Limited only by available virtual memory |
+| Allocation pattern & fragmentation | Contiguous, no fragmentation | Non-contiguous possible, causes fragmentation over time |
+| Thread Safety | Inherently thread-safe (each thread has own stack) | Requires synchronization for shared access |
+| Typical Use Cases | Local variables, function parameters, small fixed-size data | Dynamic-size data, objects with lifetime beyond scope, large allocations |
 
 ---
 
