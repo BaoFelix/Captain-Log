@@ -54,7 +54,7 @@ The core ideas of writing a CUDA program are:
 
 **Original PDF sketch (Host ↔ Device overview)**
 
-![Host and Device sketch](./cuda_basic_notes_assets/page01_img01.jpeg)
+![Host and Device sketch](./page01_img01.jpeg)
 
 1. Host-side (CPU) code allocates memory and issues commands to the device (GPU).
 2. Prepare input data on the host and transfer it to device (GPU) memory.
