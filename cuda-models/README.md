@@ -199,6 +199,12 @@ The CUDA Programming Model uses a **hierarchical approach**, dividing computatio
 - **Block**: A subset of threads inside a grid. Threads in the same block can share certain resources (e.g., shared memory) and can synchronize with each other.
 - **Thread**: The smallest unit of execution. Each thread runs the same kernel code but typically processes a different portion of the data (using an index like `threadIdx`).
 
+![Grid-Block-Thread hierarchy diagram](page04_img01.jpeg)
+
+To better understand, here is the map from software abstraction to real hardware:
+
+![Software-to-hardware mapping diagram](page04_img02.jpeg)
+
 These three levels are the most fundamental units in CUDA, allowing developers to specify:
 - how many threads to launch
 - how they are grouped into blocks
@@ -219,10 +225,6 @@ At the hardware level, NVIDIA GPUs group threads into **warps** (typically 32 th
 - You usually do not directly manage warps in code, but understanding warps helps with performance optimization (especially to avoid warp divergence).
 
 > A warp is basically 32 threads that must execute together.
-
-![Grid-Block-Thread hierarchy diagram](page04_img01.jpeg)
-
-![Software-to-hardware mapping diagram](page04_img02.jpeg)
 
 ![SIMT hand-drawn sketch](page04_img03.jpeg)
 
