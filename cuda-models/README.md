@@ -370,14 +370,89 @@ Checklist / key ideas:
 
 ### 3.2 Memory Usage
 
-![Constant memory kernel example](page07_img01.jpeg)
+Different memory types serve different purposes. Here are typical usage patterns:
 
-- Global Memory
-- Shared Memory
-- Constant Memory
-- Register Memory
+#### Constant Memory
+
+Best for read-only data that all threads access with the same value (e.g., physics constants, config params):
+
+```cpp
+__constant__ int constantData[256]; // Declare constant memory (global scope)
+
+__global__ void kernelConstant(int* data) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    data[idx] = constantData[idx] * 2; // All threads read from constant cache
+}
+
+// Host side: copy data to constant memory before kernel launch
+// cudaMemcpyToSymbol(constantData, hostData, sizeof(int) * 256);
+```
+
+#### Shared Memory
+
+Best for data reused by multiple threads within the same block:
+
+```cpp
+__global__ void kernelShared(int* data) {
+    __shared__ int sharedMem[256]; // Shared within this block
+    int idx = threadIdx.x;
+    sharedMem[idx] = data[idx];   // Load from global → shared
+    __syncthreads();               // Wait for all threads to finish loading
+    data[idx] = sharedMem[idx] * 2; // Compute using fast shared memory
+}
+```
+
+#### Global Memory
+
+Default storage for large datasets — all threads can access, but high latency:
+
+```cpp
+__global__ void kernelGlobal(float* input, float* output, int N) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < N) {
+        output[idx] = input[idx] + 1.0f; // Direct global memory read/write
+    }
+}
+```
 
 > Typically, we cannot directly control registers, and it is usually not a good idea to over-focus on manual register control early.
+
+#### Memory Performance Ranking
+
+From fastest to slowest:
+
+| Rank | Memory Type | Latency (approx.) | Scope |
+|---|---|---|---|
+| 1 | **Registers** | ~1 cycle | Thread-private |
+| 2 | **Shared Memory** | ~5-30 cycles | Block-shared |
+| 3 | **Constant Memory** (cache hit) | ~5-30 cycles | All threads, read-only |
+| 4 | **Constant Memory** (cache miss) | ~400-800 cycles | All threads, read-only |
+| 5 | **Global Memory** | ~400-800 cycles | All threads, read/write |
+| 6 | **Local Memory** | ~400-800 cycles | Thread-private (register spill) |
+
+> **Key:** Shared Memory is always fast. Constant Memory is fast **only when all threads in a warp read the same address** (broadcast); if threads read different addresses, it serializes and becomes slower than Global Memory.
+
+#### Memory Selection Decision Flow
+
+```
+Is the data read-only AND all threads read the same value?
+  ├─ Yes → Constant Memory
+  └─ No
+      ├─ Is the data reused by multiple threads within the same block?
+      │   ├─ Yes → Shared Memory (+ __syncthreads())
+      │   └─ No → Global Memory (ensure coalesced access)
+      └─ Is it a per-thread temporary variable?
+          ├─ Yes, small amount → Register (automatic)
+          └─ Yes, large amount → Spills to Local Memory (avoid this)
+```
+
+#### Best Practices Summary
+
+1. **Prefer Registers** — keep per-thread variables minimal; the compiler handles register allocation automatically.
+2. **Use Shared Memory** for data shared within a block — load from Global once, reuse many times from Shared.
+3. **Use Constant Memory** for small, read-only data where all threads read the same value (physics constants, config params, convolution weights).
+4. **Ensure Coalesced Access** on Global Memory — adjacent threads access adjacent addresses.
+5. **Avoid Local Memory spills** — reduce per-thread arrays and large local variables to prevent register overflow.
 
 ---
 
@@ -387,7 +462,20 @@ In a parallel computing environment, threads run concurrently and often share re
 
 Proper synchronization ensures operations on shared data occur in a predictable and correct order.
 
-![Shared memory synchronization kernel example](page07_img02.jpeg)
+```cpp
+__global__ void kernelSharedSync(int* data) {
+    __shared__ int sharedMem[256];
+    int idx = threadIdx.x;
+
+    sharedMem[idx] = data[idx];    // Step 1: all threads write to shared memory
+    __syncthreads();                // Step 2: barrier — wait for ALL threads to finish writing
+
+    // Step 3: now safe to read what other threads wrote
+    data[idx] = sharedMem[idx] * 2;
+    // Without __syncthreads(), thread 5 might read sharedMem[10]
+    // before thread 10 has written it → garbage data!
+}
+```
 
 ---
 
@@ -429,7 +517,7 @@ CUDA offers multiple synchronization levels:
 
 ---
 
-### 3.2 Data Races and How to Address Them
+### 3.4 Data Races and How to Address Them
 
 A data race occurs when:
 - multiple threads access the same memory location
@@ -464,32 +552,81 @@ How to address them:
 
 ---
 
-### 3.3 Common Performance Pitfalls
+### 3.5 Common Performance Pitfalls
 
 - **Warp Divergence**  
   When threads within the same warp (32 threads) take different branches — some go into the `if` path A while others go into the `else` path B — the hardware must execute path A first, then path B (or vice versa). This is called warp divergence, and it reduces parallel efficiency.
 
-![Branch divergence kernel example](page08_img01.jpeg)
+```cpp
+#include <cstdio>
+__global__ void branchDivergenceKernel(int* data) {
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    if (idx % 2 == 0) {          // Even threads take path A
+        data[idx] = data[idx] * 2;
+    } else {                      // Odd threads take path B
+        data[idx] = data[idx] + 1;
+    }
+    // Within the same warp, half go to A, half go to B
+    // → warp executes A first, then B (serialized)
+}
+```
 
 - **Uneven Thread Workload / Inconsistent Loop Iterations / Idle Threads**  
   When threads have different workloads or loop iteration counts, some threads finish early while others in the same warp are still running. This causes idle threads to stall and wait, reducing overall efficiency.
 
-![Load imbalance kernel example](page08_img02.jpeg)
+```cpp
+__global__ void unbalancedLoopKernel(int* data, int n) {
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    int loopCount = (idx % 16) + 1; // Thread 0: 1 iter, Thread 15: 16 iters
+    int sum = 0;
+    for (int i = 0; i < loopCount; i++) {
+        sum += data[idx];
+    }
+    data[idx] = sum;
+    // Threads that finish early must wait for the slowest thread in the warp
+}
+```
 
 - **Non-Coalesced Global Memory Access**  
   When global memory accesses are not contiguous, the hardware cannot efficiently coalesce read/write transactions, leading to reduced memory bandwidth utilization.
 
-![Non-coalesced global memory access example](page08_img03.jpeg)
+```cpp
+__global__ void nonCoalescedAccessKernel(int* data, int n) {
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    int stride = 32;                        // Access stride too large
+    int accessIdx = (idx * stride) % n;
+    data[accessIdx] = data[accessIdx] + 1;  // Scattered access → multiple memory transactions
+    // Fix: use stride-1 access like data[idx] for coalesced reads/writes
+}
+```
 
 - **Atomic Contention**  
   When multiple threads compete for atomic operations on the same address, the operations are serialized. The higher the contention, the longer the wait, and the worse the performance.
 
-![Atomic contention kernel example](page09_img01.jpeg)
+```cpp
+__global__ void atomicContentionKernel(int* counter) {
+    int idx = threadIdx.x + blockDim.x * blockIdx.x;
+    for (int i = 0; i < 1000; i++) {
+        atomicAdd(counter, 1); // ALL threads fight over the same address
+    }
+    // Thousands of threads serialized on one counter → extremely slow
+    // Fix: use per-block partial sums in shared memory, then atomicAdd once per block
+}
+```
 
 - **Shared Memory Bank Conflict**  
   Shared memory is divided into multiple banks. If multiple threads simultaneously access addresses that map to the same bank (and it is not a broadcast), the accesses are serialized, reducing throughput.
 
-![Shared memory bank conflict kernel example](page09_img02.jpeg)
+```cpp
+__global__ void sharedMemBankConflictKernel(int* out) {
+    __shared__ int s_data[1024];
+    int idx = threadIdx.x;
+    s_data[idx * 32] = idx;      // stride-32 → all threads hit Bank 0 → 32-way conflict!
+    __syncthreads();
+    out[idx] = s_data[idx * 32];
+    // Fix: use stride-1 access like s_data[idx] to avoid bank conflicts
+}
+```
 
 - **Independence Limitation Between Thread Blocks**  
   There is no direct synchronization mechanism between different thread blocks (unless using global memory with external coordination). This design ensures parallelism but also introduces programming constraints.
