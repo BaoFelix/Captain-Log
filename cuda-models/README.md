@@ -306,7 +306,6 @@ In the `vectorAdd` example above:
 
 ![Global memory access kernel example](page06_img01.jpeg)
 
-![Coalesced vs non-coalesced access sketch](page06_img02.jpeg)
 - `idx` is consecutive
 - Threads in the same warp read/write consecutive memory
 - This allows memory requests to be coalesced into fewer transactions
@@ -321,7 +320,7 @@ To support parallel shared-memory access inside a block, the GPU divides shared 
 
 If multiple threads access different addresses that map to the same bank, the accesses may be serialized. This is called a **Bank Conflict**, and it lowers performance.
 
-![Shared memory bank mapping table](page06_img03.jpeg)
+![Coalesced vs non-coalesced access sketch](page06_img02.jpeg)
 
 ---
 
