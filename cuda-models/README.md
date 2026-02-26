@@ -132,9 +132,11 @@ int main()
 ### 1.3 CPU vs GPU Architecture
 
 CPU vs GPU cache hierarchy comparison:
+
 ![CPU vs GPU cache hierarchy comparison](page02_img01.png)
 
 GPU SM layout illustration:
+
 ![GPU SM layout illustration](page02_img02.jpeg)
 
 - **SM (Streaming Multiprocessor)**: Similar (conceptually) to a CPU core cluster for CUDA execution. It is responsible for managing and executing thread blocks.
