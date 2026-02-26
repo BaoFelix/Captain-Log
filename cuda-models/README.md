@@ -224,9 +224,9 @@ At the hardware level, NVIDIA GPUs group threads into **warps** (typically 32 th
 - When a block is assigned to a **Streaming Multiprocessor (SM)**, it is subdivided into several warps.
 - You usually do not directly manage warps in code, but understanding warps helps with performance optimization (especially to avoid warp divergence).
 
-> A warp is basically 32 threads that must execute together.
-
 ![SIMT hand-drawn sketch](page04_img03.jpeg)
+
+> A warp is basically 32 threads that must execute together.
 
 ![Warp hand-drawn sketch](page04_img04.jpeg)
 
