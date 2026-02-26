@@ -151,7 +151,29 @@ GPU SM layout illustration:
 
 ### 1.4 Some Key Abstractions in CUDA
 
-(See the table in Section 2.1.2 / summary table below for a compact view of the main abstractions.)
+#### Summary Table of CUDA Abstractions
+
+| Category | Abstraction | Definition |
+|---|---|---|
+| Programming Model | Thread | The smallest unit of execution in CUDA. Each thread runs the same kernel code but operates on different data. |
+| Programming Model | Block | A group of threads; threads within it can share shared memory. |
+| Programming Model | Grid | A group of blocks launched together to execute a kernel; represents all threads for a kernel call. |
+| Programming Model | Kernel | Function (executed by many threads, with different data) that runs on GPU. |
+| Programming Model | Synchronization | Mechanisms to coordinate thread execution to ensure data consistency and correct program flow. |
+| Programming Model | Streams | Sequences of operations executed in order on the GPU; allow overlapping data transfer and kernel execution. |
+| Programming Model | Events | Markers used to synchronize streams and measure performance. |
+| Execution Model | SIMT | Single Instruction, Multiple Threads. Multiple threads execute the same instruction on different data. |
+| Execution Model | Warp | The smallest scheduling unit; a group of 32 threads executed together by the GPU. |
+| Execution Model | Streaming Multiprocessors (SMs) | The core units in a CUDA GPU, each containing multiple CUDA cores, shared memory, and other resources. |
+| Execution Model | Schedulers | Hardware units within SMs that manage warps, selecting which warp to execute next to optimize utilization and hide latency. |
+| Execution Model | Thread Divergence | When threads within the same warp follow different execution paths, causing the warp to execute multiple instruction streams. |
+| Memory Model | Global Memory | Largest and slowest memory; accessible by all threads. |
+| Memory Model | Shared Memory | Medium size; faster than global memory and slower than registers; shared among threads in a block. |
+| Memory Model | Registers | Smallest and fastest storage; private to each thread for variables and intermediate results. |
+| Memory Model | Local Memory | Spill storage when registers are insufficient; physically in global memory but used like per-thread local storage. |
+| Memory Model | Constant Memory | Read-only memory optimized for broadcast; useful for storing constants. |
+
+---
 
 ---
 
@@ -181,30 +203,6 @@ These three levels are the most fundamental units in CUDA, allowing developers t
 - how many threads to launch
 - how they are grouped into blocks
 - how to structure parallel computation tasks
-
-#### Summary Table of CUDA Abstractions
-
-| Category | Abstraction | Definition |
-|---|---|---|
-| Programming Model | Thread | The smallest unit of execution in CUDA. Each thread runs the same kernel code but operates on different data. |
-| Programming Model | Block | A group of threads; threads within it can share shared memory. |
-| Programming Model | Grid | A group of blocks launched together to execute a kernel; represents all threads for a kernel call. |
-| Programming Model | Kernel | Function (executed by many threads, with different data) that runs on GPU. |
-| Programming Model | Synchronization | Mechanisms to coordinate thread execution to ensure data consistency and correct program flow. |
-| Programming Model | Streams | Sequences of operations executed in order on the GPU; allow overlapping data transfer and kernel execution. |
-| Programming Model | Events | Markers used to synchronize streams and measure performance. |
-| Execution Model | SIMT | Single Instruction, Multiple Threads. Multiple threads execute the same instruction on different data. |
-| Execution Model | Warp | The smallest scheduling unit; a group of 32 threads executed together by the GPU. |
-| Execution Model | Streaming Multiprocessors (SMs) | The core units in a CUDA GPU, each containing multiple CUDA cores, shared memory, and other resources. |
-| Execution Model | Schedulers | Hardware units within SMs that manage warps, selecting which warp to execute next to optimize utilization and hide latency. |
-| Execution Model | Thread Divergence | When threads within the same warp follow different execution paths, causing the warp to execute multiple instruction streams. |
-| Memory Model | Global Memory | Largest and slowest memory; accessible by all threads. |
-| Memory Model | Shared Memory | Medium size; faster than global memory and slower than registers; shared among threads in a block. |
-| Memory Model | Registers | Smallest and fastest storage; private to each thread for variables and intermediate results. |
-| Memory Model | Local Memory | Spill storage when registers are insufficient; physically in global memory but used like per-thread local storage. |
-| Memory Model | Constant Memory | Read-only memory optimized for broadcast; useful for storing constants. |
-
----
 
 ### 2.2 Execution Model
 
